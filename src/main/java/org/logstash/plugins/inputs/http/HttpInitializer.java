@@ -12,6 +12,7 @@ import org.logstash.plugins.inputs.http.util.ExecutionObserver;
 import org.logstash.plugins.inputs.http.util.ExecutionObservingMessageHandler;
 import org.logstash.plugins.inputs.http.util.RejectWhenBlockedInboundHandler;
 import org.logstash.plugins.inputs.http.util.SslHandlerProvider;
+import org.logstash.plugins.inputs.http.util.WireLogger;
 
 import java.time.Duration;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -45,6 +46,7 @@ public class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         pipeline.addLast(new HttpServerCodec());
+        pipeline.addLast(new WireLogger());
         pipeline.addLast(new RejectWhenBlockedInboundHandler(executionObserver, Duration.ofSeconds(10)));
         pipeline.addLast(new HttpContentDecompressor());
         pipeline.addLast(new HttpObjectAggregator(maxContentLength));
