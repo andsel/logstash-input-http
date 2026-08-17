@@ -30,7 +30,7 @@ public class WireLogger extends ChannelDuplexHandler {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (logger.isDebugEnabled() && msg instanceof ByteBuf) {
-            logger.debug("Read from {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg));
+            logger.debug("<< {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg));
         }
         ctx.fireChannelRead(msg);
     }
@@ -38,7 +38,7 @@ public class WireLogger extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (logger.isDebugEnabled() && msg instanceof ByteBuf) {
-            logger.debug("Write to {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg));
+            logger.debug(">> {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg));
         }
         ctx.write(msg, promise);
     }

@@ -123,7 +123,7 @@ class WireLoggerTest {
         }
 
         List<String> messages = logSpy.getMessages();
-        assertThat(messages, hasItem(matchesPattern("Read from .*" + HOST + ":\\d+ : POST.*")));
+        assertThat(messages, hasItem(matchesPattern("<< .*" + HOST + ":\\d+ : POST.*")));
         assertThat(messages, hasItem(containsString("[\\r][\\n]")));
         assertThat(messages, hasItem(containsString("{\"message\": \"hello\"}")));
     }
@@ -141,7 +141,7 @@ class WireLoggerTest {
         }
 
         List<String> messages = logSpy.getMessages();
-        assertThat(messages, hasItem(matchesPattern("Write to .*" + HOST + ":\\d+ : HTTP/1\\.1 200 OK.*")));
+        assertThat(messages, hasItem(matchesPattern(">> .*" + HOST + ":\\d+ : HTTP/1\\.1 200 OK.*")));
         assertThat(messages, hasItem(containsString("[\\r][\\n]")));
     }
 
