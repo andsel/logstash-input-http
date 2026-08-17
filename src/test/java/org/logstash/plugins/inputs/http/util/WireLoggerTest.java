@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
 
@@ -105,8 +106,26 @@ class WireLoggerTest {
         client.close();
 
         List<String> messages = logSpy.getMessages();
-        assertThat(messages, hasItem(matchesPattern("Opening connection /" + HOST + ":\\d+")));
-        assertThat(messages, hasItem(matchesPattern("Closing connection /" + HOST + ":\\d+")));
+        assertThat(messages, hasItem(matchesPattern("Opening connection .*" + HOST + ":\\d+")));
+        assertThat(messages, hasItem(matchesPattern("Closing connection .*" + HOST + ":\\d+")));
+    }
+
+    @Test
+    void wireLoggerDumpsRawHttpRequestContent() throws Exception {
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://" + HOST + ":" + port + "/"))
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"message\": \"hello\"}"))
+                    .header("Content-Type", "application/json")
+                    .build();
+
+            client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+
+        List<String> messages = logSpy.getMessages();
+        assertThat(messages, hasItem(matchesPattern("Read from .*" + HOST + ":\\d+ : POST.*")));
+        assertThat(messages, hasItem(containsString("[\\r][\\n]")));
+        assertThat(messages, hasItem(containsString("{\"message\": \"hello\"}")));
     }
 
     private void waitForServerReady() {
