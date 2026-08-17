@@ -1,12 +1,13 @@
 package org.logstash.plugins.inputs.http.util;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class WireLogger extends ChannelInboundHandlerAdapter {
+public class WireLogger extends ChannelDuplexHandler {
 
     private final static Logger logger = LogManager.getLogger(WireLogger.class);
 
@@ -32,6 +33,14 @@ public class WireLogger extends ChannelInboundHandlerAdapter {
             logger.debug("Read from {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg));
         }
         ctx.fireChannelRead(msg);
+    }
+
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        if (logger.isDebugEnabled() && msg instanceof ByteBuf) {
+            logger.debug("Write to {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg));
+        }
+        ctx.write(msg, promise);
     }
 
     private static String dump(ByteBuf buf) {

@@ -128,6 +128,23 @@ class WireLoggerTest {
         assertThat(messages, hasItem(containsString("{\"message\": \"hello\"}")));
     }
 
+    @Test
+    void wireLoggerDumpsRawHttpResponseContent() throws Exception {
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://" + HOST + ":" + port + "/"))
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"message\": \"hello\"}"))
+                    .header("Content-Type", "application/json")
+                    .build();
+
+            client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+
+        List<String> messages = logSpy.getMessages();
+        assertThat(messages, hasItem(matchesPattern("Write to .*" + HOST + ":\\d+ : HTTP/1\\.1 200 OK.*")));
+        assertThat(messages, hasItem(containsString("[\\r][\\n]")));
+    }
+
     private void waitForServerReady() {
         Awaitility.await()
                 .atMost(5, TimeUnit.SECONDS)
