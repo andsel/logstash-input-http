@@ -11,6 +11,8 @@ public class WireLogger extends ChannelDuplexHandler {
 
     private final static Logger logger = LogManager.getLogger(WireLogger.class);
 
+    static final int MAX_DUMP_LENGTH = 4096;
+
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         if (logger.isDebugEnabled()) {
@@ -30,7 +32,7 @@ public class WireLogger extends ChannelDuplexHandler {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (logger.isDebugEnabled() && msg instanceof ByteBuf) {
-            logger.debug("<< {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg));
+            logger.debug("<< {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg, MAX_DUMP_LENGTH));
         }
         ctx.fireChannelRead(msg);
     }
@@ -38,14 +40,18 @@ public class WireLogger extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (logger.isDebugEnabled() && msg instanceof ByteBuf) {
-            logger.debug(">> {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg));
+            logger.debug(">> {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg, MAX_DUMP_LENGTH));
         }
         ctx.write(msg, promise);
     }
 
-    private static String dump(ByteBuf buf) {
+    // maxLength == 0 means unlimited; any other value caps the dumped bytes and appends a truncation notice.
+    static String dump(ByteBuf buf, int maxLength) {
+        int total = buf.readableBytes();
+        int limit = (maxLength == 0) ? total : Math.min(maxLength, total);
+
         StringBuilder sb = new StringBuilder();
-        for (int i = buf.readerIndex(), end = buf.readerIndex() + buf.readableBytes(); i < end; i++) {
+        for (int i = buf.readerIndex(), end = buf.readerIndex() + limit; i < end; i++) {
             byte b = buf.getByte(i);
             if (b == '\r') {
                 sb.append("[\\r]");
@@ -57,6 +63,11 @@ public class WireLogger extends ChannelDuplexHandler {
                 sb.append(String.format("[0x%02X]", b & 0xFF));
             }
         }
+
+        if (maxLength > 0 && total > maxLength) {
+            sb.append("...[truncated, total ").append(total).append(" bytes]");
+        }
+
         return sb.toString();
     }
 }

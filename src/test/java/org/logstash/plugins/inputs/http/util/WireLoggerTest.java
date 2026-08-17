@@ -94,16 +94,16 @@ class WireLoggerTest {
 
     @Test
     void wireLoggerLogsOpeningAndClosingConnectionAroundHttpRequest() throws Exception {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://" + HOST + ":" + port + "/"))
-                .POST(HttpRequest.BodyPublishers.ofString("{\"message\": \"hello\"}"))
-                .header("Content-Type", "application/json")
-                .build();
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://" + HOST + ":" + port + "/"))
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"message\": \"hello\"}"))
+                    .header("Content-Type", "application/json")
+                    .build();
 
-        client.send(request, HttpResponse.BodyHandlers.ofString());
-        // Close client so that "Closing connection" is logged before we assert. 
-        client.close();
+            client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+        // Implicit close of auto-closeable client so that "Closing connection" is logged before we assert.
 
         List<String> messages = logSpy.getMessages();
         assertThat(messages, hasItem(matchesPattern("Opening connection .*" + HOST + ":\\d+")));
@@ -143,6 +143,24 @@ class WireLoggerTest {
         List<String> messages = logSpy.getMessages();
         assertThat(messages, hasItem(matchesPattern(">> .*" + HOST + ":\\d+ : HTTP/1\\.1 200 OK.*")));
         assertThat(messages, hasItem(containsString("[\\r][\\n]")));
+    }
+
+    @Test
+    void wireLoggerTruncatesRequestBiggerThanMaxDumpLength() throws Exception {
+        // Netty's AdaptiveRecvByteBufAllocator starts at 1024 bytes and jumps to 8192 after the
+        // first full read. With a body of MAX_DUMP_LENGTH * 3 bytes the second read chunk is
+        // 8192 > MAX_DUMP_LENGTH, which guarantees the truncation notice is appended.
+        String largeBody = "A".repeat(WireLogger.MAX_DUMP_LENGTH * 3);
+
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            client.send(HttpRequest.newBuilder()
+                    .uri(URI.create("http://" + HOST + ":" + port + "/"))
+                    .POST(HttpRequest.BodyPublishers.ofString(largeBody))
+                    .header("Content-Type", "application/json")
+                    .build(), HttpResponse.BodyHandlers.discarding());
+        }
+
+        assertThat(logSpy.getMessages(), hasItem(containsString("truncated, total")));
     }
 
     private void waitForServerReady() {
