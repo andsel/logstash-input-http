@@ -90,6 +90,25 @@ Values in `additional_codecs` are prioritized over those specified in the
 `codec` option. That is, the default `codec` is applied only if no codec
 for the request's content-type is found in the `additional_codecs` setting.
 
+[id="plugins-{type}s-{plugin}-wire-logggin"]
+==== Enable wire logging
+This plugin logs all requests and responses passing through the socket after TLS decoding.
+This functionality helps troubleshoot issues in the processing pipeline that standard 
+external traffic captures, such as `tcpdump`, cannot resolve.
+To dump received and sent payloads post-TLS decoding, enable debug logging 
+for `org.logstash.plugins.inputs.http.util.WireLogger`.
+Note: Payloads exceeding 4 KB are automatically truncated to prevent excessive log file growth.
+
+To enable it start {ls} in debug mode or configure the `config/log4j2.properties` to include:
+
+[source,text]
+-----
+logger.httpwire.name = org.logstash.plugins.inputs.http.util.WireLogger
+logger.httpwire.level = DEBUG
+-----
+
+WARNING: when this log is enabled the payload is dumped, so if contains secretes those are exposed in {ls} logs.
+
 [id="plugins-{type}s-{plugin}-options"]
 ==== Http Input Configuration Options
 
