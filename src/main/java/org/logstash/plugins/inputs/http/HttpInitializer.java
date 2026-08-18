@@ -45,7 +45,9 @@ public class HttpInitializer extends ChannelInitializer<SocketChannel> {
             pipeline.addLast(sslHandler);
         }
 
-        pipeline.addLast(new WireLogger());
+        final int dumpSize = WireLogger.readDumpSizeProperty();
+
+        pipeline.addLast(new WireLogger(dumpSize));
         pipeline.addLast(new HttpServerCodec());
         pipeline.addLast(new RejectWhenBlockedInboundHandler(executionObserver, Duration.ofSeconds(10)));
         pipeline.addLast(new HttpContentDecompressor());

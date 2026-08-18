@@ -11,7 +11,27 @@ public class WireLogger extends ChannelDuplexHandler {
 
     private final static Logger logger = LogManager.getLogger(WireLogger.class);
 
-    static final int MAX_DUMP_LENGTH = 4096;
+    public static final int MAX_DUMP_LENGTH = 4096;
+    private static final int UNLIMITED_DUMP_LENGTH = 0;
+    private static final String SIZE_PROP_NAME = "logstash.httpinput.wire.dump.size";
+    private final int maxDumpLength;
+
+    public static int readDumpSizeProperty() throws Exception {
+        String dumpSizeStr = System.getProperty(SIZE_PROP_NAME, Integer.toString(MAX_DUMP_LENGTH));
+        try {
+            int dumpSize = Integer.parseInt(dumpSizeStr);
+            if (dumpSize < 0) {
+                throw new RuntimeException(SIZE_PROP_NAME + " system property has received negative integer value: " + dumpSize);
+            }
+            return dumpSize;
+        } catch (NumberFormatException e) {
+            throw new RuntimeException(SIZE_PROP_NAME + " system property has received invalid integer value: " + dumpSizeStr, e);
+        }
+    }
+    
+    public WireLogger(int maxDumpLength) {
+        this.maxDumpLength = maxDumpLength;
+    }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -32,7 +52,7 @@ public class WireLogger extends ChannelDuplexHandler {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (logger.isDebugEnabled() && msg instanceof ByteBuf) {
-            logger.debug("<< {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg, MAX_DUMP_LENGTH));
+            logger.debug("<< {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg, maxDumpLength));
         }
         ctx.fireChannelRead(msg);
     }
@@ -40,7 +60,7 @@ public class WireLogger extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (logger.isDebugEnabled() && msg instanceof ByteBuf) {
-            logger.debug(">> {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg, MAX_DUMP_LENGTH));
+            logger.debug(">> {} : {}", ctx.channel().remoteAddress(), dump((ByteBuf) msg, maxDumpLength));
         }
         ctx.write(msg, promise);
     }
@@ -48,10 +68,12 @@ public class WireLogger extends ChannelDuplexHandler {
     // maxLength == 0 means unlimited; any other value caps the dumped bytes and appends a truncation notice.
     static String dump(ByteBuf buf, int maxLength) {
         int total = buf.readableBytes();
-        int limit = (maxLength == 0) ? total : Math.min(maxLength, total);
+        int limit = (maxLength == UNLIMITED_DUMP_LENGTH) ? total : Math.min(maxLength, total);
 
         StringBuilder sb = new StringBuilder();
-        for (int i = buf.readerIndex(), end = buf.readerIndex() + limit; i < end; i++) {
+        final int start = buf.readerIndex();
+        final int end = start + limit;
+        for (int i = start; i < end; i++) {
             byte b = buf.getByte(i);
             if (b == '\r') {
                 sb.append("[\\r]");

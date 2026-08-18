@@ -98,6 +98,14 @@ external traffic captures, such as `tcpdump`, cannot resolve.
 To dump received and sent payloads post-TLS decoding, enable debug logging 
 for `org.logstash.plugins.inputs.http.util.WireLogger`.
 Note: Payloads exceeding 4 KB are automatically truncated to prevent excessive log file growth.
+If you want to set a different limit, then in {ls} `config/jvm.options` configure a value for the system property `logstash.httpinput.wire.dump.size`.
+
+[source,text]
+-----
+-Dlogstash.httpinput.wire.dump.size=512
+-----
+If you want to remove any limit, at the risk of polluting {ls} logs, set it to `0`.
+Admitted values are only integers greater or equals to 0.
 
 To enable it start {ls} in debug mode or configure the `config/log4j2.properties` to include:
 

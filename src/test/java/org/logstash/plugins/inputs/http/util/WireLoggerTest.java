@@ -27,6 +27,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WireLoggerTest {
 
@@ -165,6 +167,48 @@ class WireLoggerTest {
         }
 
         assertThat(logSpy.getMessages(), hasItem(containsString("truncated, total")));
+    }
+
+    private static final String SIZE_PROP = "logstash.httpinput.wire.dump.size";
+
+    @Test
+    void readDumpSizePropertyReturnsPositiveValue() throws Exception {
+        System.setProperty(SIZE_PROP, "2048");
+        try {
+            assertEquals(2048, WireLogger.readDumpSizeProperty());
+        } finally {
+            System.clearProperty(SIZE_PROP);
+        }
+    }
+
+    @Test
+    void readDumpSizePropertyReturnsZeroForUnlimited() throws Exception {
+        System.setProperty(SIZE_PROP, "0");
+        try {
+            assertEquals(0, WireLogger.readDumpSizeProperty());
+        } finally {
+            System.clearProperty(SIZE_PROP);
+        }
+    }
+
+    @Test
+    void readDumpSizePropertyThrowsForNegativeValue() {
+        System.setProperty(SIZE_PROP, "-1");
+        try {
+            assertThrows(RuntimeException.class, WireLogger::readDumpSizeProperty);
+        } finally {
+            System.clearProperty(SIZE_PROP);
+        }
+    }
+
+    @Test
+    void readDumpSizePropertyThrowsForNonNumericValue() {
+        System.setProperty(SIZE_PROP, "notanumber");
+        try {
+            assertThrows(RuntimeException.class, WireLogger::readDumpSizeProperty);
+        } finally {
+            System.clearProperty(SIZE_PROP);
+        }
     }
 
     private void waitForServerReady() {
