@@ -90,7 +90,7 @@ Values in `additional_codecs` are prioritized over those specified in the
 `codec` option. That is, the default `codec` is applied only if no codec
 for the request's content-type is found in the `additional_codecs` setting.
 
-[id="plugins-{type}s-{plugin}-wire-logggin"]
+[id="plugins-{type}s-{plugin}-wire-logging"]
 ==== Enable wire logging
 This plugin logs all requests and responses passing through the socket after TLS decoding.
 This functionality helps troubleshoot issues in the processing pipeline that standard 
