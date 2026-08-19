@@ -27,8 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class WireLoggerTest {
 
@@ -172,7 +171,7 @@ class WireLoggerTest {
     private static final String SIZE_PROP = "logstash.httpinput.wire.dump.size";
 
     @Test
-    void readDumpSizePropertyReturnsPositiveValue() throws Exception {
+    void readDumpSizePropertyReturnsTheConfiguredValueAsInteger() throws Exception {
         System.setProperty(SIZE_PROP, "2048");
         try {
             assertEquals(2048, WireLogger.readDumpSizeProperty());
@@ -182,30 +181,40 @@ class WireLoggerTest {
     }
 
     @Test
-    void readDumpSizePropertyReturnsZeroForUnlimited() throws Exception {
+    void validateDumpSizePropertyReturnsPositiveValue() throws Exception {
+        System.setProperty(SIZE_PROP, "2048");
+        try {
+            assertDoesNotThrow(WireLogger::validateDumpSizeProperty);
+        } finally {
+            System.clearProperty(SIZE_PROP);
+        }
+    }
+
+    @Test
+    void validateDumpSizePropertyForUnlimitedValue() {
         System.setProperty(SIZE_PROP, "0");
         try {
-            assertEquals(0, WireLogger.readDumpSizeProperty());
+            assertDoesNotThrow(WireLogger::validateDumpSizeProperty);
         } finally {
             System.clearProperty(SIZE_PROP);
         }
     }
 
     @Test
-    void readDumpSizePropertyThrowsForNegativeValue() {
+    void validateDumpSizePropertyThrowsForNegativeValue() {
         System.setProperty(SIZE_PROP, "-1");
         try {
-            assertThrows(RuntimeException.class, WireLogger::readDumpSizeProperty);
+            assertThrows(RuntimeException.class, WireLogger::validateDumpSizeProperty);
         } finally {
             System.clearProperty(SIZE_PROP);
         }
     }
 
     @Test
-    void readDumpSizePropertyThrowsForNonNumericValue() {
+    void validateDumpSizePropertyThrowsForNonNumericValue() {
         System.setProperty(SIZE_PROP, "notanumber");
         try {
-            assertThrows(RuntimeException.class, WireLogger::readDumpSizeProperty);
+            assertThrows(RuntimeException.class, WireLogger::validateDumpSizeProperty);
         } finally {
             System.clearProperty(SIZE_PROP);
         }

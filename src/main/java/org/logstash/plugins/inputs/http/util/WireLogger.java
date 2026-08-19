@@ -16,17 +16,33 @@ public class WireLogger extends ChannelDuplexHandler {
     private static final String SIZE_PROP_NAME = "logstash.httpinput.wire.dump.size";
     private final int maxDumpLength;
 
-    public static int readDumpSizeProperty() throws Exception {
+    /**
+     * Used to validate the dump's size system property. Has to be called before {@link #readDumpSizeProperty()}.
+     * 
+     * @throws RuntimeException if the number is not parseable as integer or if it's negative.
+     * */
+    public static void validateDumpSizeProperty() throws Exception {
         String dumpSizeStr = System.getProperty(SIZE_PROP_NAME, Integer.toString(MAX_DUMP_LENGTH));
         try {
             int dumpSize = Integer.parseInt(dumpSizeStr);
             if (dumpSize < 0) {
                 throw new RuntimeException(SIZE_PROP_NAME + " system property has received negative integer value: " + dumpSize);
             }
-            return dumpSize;
         } catch (NumberFormatException e) {
             throw new RuntimeException(SIZE_PROP_NAME + " system property has received invalid integer value: " + dumpSizeStr, e);
         }
+    }
+    
+    /**
+     * Method used to retrieve the dump's size system property value. 
+     * Doesn't check for validity, the {@link #validateDumpSizeProperty()} has to be called before.
+     * 
+     * @return integer value parsed from system property
+     * @throws Exception throw any error that Integer.parseInt encounter.
+     * */
+    public static int readDumpSizeProperty() throws Exception {
+        String dumpSizeStr = System.getProperty(SIZE_PROP_NAME, Integer.toString(MAX_DUMP_LENGTH));
+        return Integer.parseInt(dumpSizeStr);
     }
     
     public WireLogger(int maxDumpLength) {
