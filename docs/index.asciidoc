@@ -92,10 +92,10 @@ for the request's content-type is found in the `additional_codecs` setting.
 
 [id="plugins-{type}s-{plugin}-wire-logging"]
 ==== Enable wire logging
-This plugin logs all requests and responses passing through the socket after TLS decoding.
+This plugin could logs all requests and responses passing through the socket after TLS decoding.
 This functionality helps troubleshoot issues in the processing pipeline that standard 
 external traffic captures, such as `tcpdump`, cannot resolve.
-To dump received and sent payloads post-TLS decoding, enable debug logging 
+By default it's disabled, to dump received and sent payloads post-TLS decoding, enable debug logging 
 for `org.logstash.plugins.inputs.http.util.WireLogger`.
 Note: Payloads exceeding 4 KB are automatically truncated to prevent excessive log file growth.
 If you want to set a different limit, then in {ls} `config/jvm.options` configure a value for the system property `logstash.httpinput.wire.dump.size`.
